@@ -167,8 +167,22 @@ class Conversation(_Base):
 # ---------------------------------------------------------------------------
 # Account & Billing
 # ---------------------------------------------------------------------------
+class Tenant(_Base):
+    id: str
+    name: str
+    email: Optional[str]
+    credit_balance_micros: int
+    is_admin: bool
+    is_frozen: bool
+    created_at: str
+
+
 class Account(_Base):
-    tenant: Dict[str, Any]
+    tenant: Tenant
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        super().__init__(data)
+        self.tenant = Tenant(data.get("tenant", {}))
 
 
 class BillingSummary(_Base):
