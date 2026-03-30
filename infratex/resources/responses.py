@@ -21,6 +21,8 @@ class Responses:
         *,
         message: str,
         method: str = "vector",
+        model: str = "fast",
+        reasoning: bool = False,
         limit: int = 5,
         document_ids: Optional[List[str]] = None,
         collection_id: Optional[str] = None,
@@ -32,6 +34,7 @@ class Responses:
         Event types:
 
         - ``"sources"`` -- retrieved source chunks (list of dicts)
+        - ``"thinking"`` -- reasoning content (when reasoning=True)
         - ``"text"`` -- a chunk of generated text
         - ``"done"`` -- stream complete
         - ``"error"`` -- an error occurred
@@ -42,6 +45,10 @@ class Responses:
             The user message / question.
         method:
             ``"vector"`` or ``"hybrid"``.
+        model:
+            ``"fast"`` (default) or ``"pro"`` (more intelligent, higher cost).
+        reasoning:
+            Enable extended reasoning. Default ``False``.
         limit:
             How many source chunks to retrieve (1--20).
         document_ids:
@@ -54,8 +61,11 @@ class Responses:
         body: Dict[str, Any] = {
             "message": message,
             "method": method,
+            "model": model,
             "limit": limit,
         }
+        if reasoning:
+            body["reasoning"] = True
         if document_ids is not None:
             body["document_ids"] = document_ids
         if collection_id is not None:
