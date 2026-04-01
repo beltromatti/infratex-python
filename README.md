@@ -55,6 +55,8 @@ client = Infratex()
 
 ```python
 # Upload
+# The SDK keeps this ergonomic one-call flow even though the raw HTTP API
+# now creates the document first and polls until parsing is complete.
 doc = client.documents.upload("report.pdf")
 doc = client.documents.upload("report.pdf", method="standard", collection_id="col-id")
 

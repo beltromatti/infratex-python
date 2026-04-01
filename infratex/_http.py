@@ -48,16 +48,17 @@ class HTTPClient:
     ) -> None:
         self._api_key = api_key
         self._base_url = (base_url or _DEFAULT_BASE_URL).rstrip("/")
+        self.timeout_seconds = timeout or _DEFAULT_TIMEOUT
 
         if httpx_client is not None:
             self._client = httpx_client
         else:
             self._client = httpx.Client(
                 base_url=self._base_url,
-                timeout=timeout or _DEFAULT_TIMEOUT,
+                timeout=self.timeout_seconds,
                 headers={
                     "Authorization": "Bearer {}".format(api_key),
-                    "User-Agent": "infratex-python/0.3.0",
+                    "User-Agent": "infratex-python/0.4.0",
                 },
             )
 

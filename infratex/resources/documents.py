@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from .._http import InfratexError
 from .._types import DocumentList, Document, Index, UploadedDocument
 
 if TYPE_CHECKING:
@@ -13,6 +15,8 @@ if TYPE_CHECKING:
 
 class Documents:
     """Interact with the ``/api/v1/documents`` endpoints."""
+
+    _poll_interval_seconds = 1.0
 
     def __init__(self, client: HTTPClient) -> None:
         self._client = client
@@ -55,7 +59,8 @@ class Documents:
                 data=data,
                 files=files,
             )
-        return UploadedDocument(resp)
+        created = Document(resp)
+        return self._wait_for_uploaded_document(created.id)
 
     def list(
         self,
@@ -95,6 +100,40 @@ class Documents:
     def markdown(self, document_id: str) -> str:
         """Download the parsed markdown for a document."""
         return self._client.request_text("GET", "/api/v1/documents/{}/markdown".format(document_id))
+
+    def _wait_for_uploaded_document(self, document_id: str) -> UploadedDocument:
+        deadline = time.monotonic() + self._client.timeout_seconds
+
+        while True:
+            document = self.get(document_id)
+            if document.status in {"done", "parsed", "indexed"}:
+                return UploadedDocument(
+                    {
+                        "id": document.id,
+                        "status": document.status,
+                        "method": document.method,
+                        "filename": document.filename,
+                        "pipeline": document.pipeline,
+                        "page_count": document.page_count,
+                        "markdown": self.markdown(document_id),
+                        "extraction_ms": document.processing_time_ms or 0,
+                        "collection_id": document.collection_id,
+                        "extraction_pages": document.extraction_pages,
+                    }
+                )
+            if document.status == "error":
+                raise InfratexError(
+                    document.error_message or "Document processing failed",
+                    status_code=409,
+                    code="document_processing_failed",
+                )
+            if time.monotonic() >= deadline:
+                raise InfratexError(
+                    "Document processing timed out",
+                    status_code=504,
+                    code="upload_timeout",
+                )
+            time.sleep(self._poll_interval_seconds)
 
     def delete(self, document_id: str) -> None:
         """Delete a document."""

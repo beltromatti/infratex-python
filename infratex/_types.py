@@ -48,7 +48,6 @@ class Document(_Base):
     chunk_count: Optional[int]
     index_method: Optional[str]
     collection_id: Optional[str]
-    markdown: Optional[str]
     upload_time: Optional[str]
     extraction_pages: Optional[List[Dict[str, Any]]]
 
