@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from .._scope import validate_scope
 from .._types import SearchResponse
 
 if TYPE_CHECKING:
@@ -40,13 +41,17 @@ class Searches:
         collection_id:
             Restrict search to this collection.
         """
+        normalized_document_ids = validate_scope(
+            document_ids=document_ids,
+            collection_id=collection_id,
+        )
         body: Dict[str, Any] = {
             "query": query,
             "method": method,
             "limit": limit,
         }
-        if document_ids is not None:
-            body["document_ids"] = document_ids
+        if normalized_document_ids is not None:
+            body["document_ids"] = normalized_document_ids
         if collection_id is not None:
             body["collection_id"] = collection_id
 

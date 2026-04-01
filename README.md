@@ -85,7 +85,6 @@ results = client.searches.create(
     method="vector",
     limit=5,
     document_ids=["doc-id"],
-    collection_id="col-id",
 )
 for r in results:
     print(r.score, r.content[:200])
@@ -99,7 +98,6 @@ for event in client.responses.create(
     method="hybrid",
     limit=5,
     document_ids=["doc-id"],
-    conversation_id="conv-id",
 ):
     if event.type == "text":
         print(event.content, end="")
@@ -107,6 +105,23 @@ for event in client.responses.create(
         print("Sources:", event.content)
     elif event.type == "done":
         print("\n--- Done ---")
+```
+
+```python
+# Managed multi-turn thread with persisted scope
+conv = client.conversations.create(
+    title="Quarterly Analysis",
+    collection_id="col-id",
+)
+
+for event in client.responses.create(
+    message="How does that compare with the previous quarter?",
+    method="hybrid",
+    model="pro",
+    conversation_id=conv.id,
+):
+    if event.type == "text":
+        print(event.content, end="")
 ```
 
 ### Collections
@@ -122,7 +137,7 @@ client.collections.delete("col-id")
 ### Conversations
 
 ```python
-conv = client.conversations.create(title="Analysis")
+conv = client.conversations.create(title="Analysis", collection_id="col-id")
 convs = client.conversations.list()
 conv = client.conversations.get("conv-id")  # includes messages
 client.conversations.delete("conv-id")

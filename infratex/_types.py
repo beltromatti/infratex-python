@@ -159,9 +159,29 @@ class Collection(_Base):
 class Conversation(_Base):
     id: str
     title: str
+    collection_id: Optional[str]
+    document_ids: List[str]
     created_at: str
     updated_at: Optional[str]
-    messages: Optional[List[Dict[str, Any]]]
+    messages: Optional[List["ConversationMessage"]]
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        super().__init__(data)
+        self.document_ids = list(data.get("document_ids", []))
+        raw_messages = data.get("messages")
+        self.messages = (
+            [ConversationMessage(message) for message in raw_messages]
+            if isinstance(raw_messages, list)
+            else None
+        )
+
+
+class ConversationMessage(_Base):
+    id: str
+    role: str
+    content: str
+    created_at: str
+    metadata: Optional[Dict[str, Any]]
 
 
 # ---------------------------------------------------------------------------

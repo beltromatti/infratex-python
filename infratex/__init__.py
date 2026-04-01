@@ -7,6 +7,7 @@ from ._types import (
     BillingSummary,
     Collection,
     Conversation,
+    ConversationMessage,
     Document,
     DocumentList,
     Index,
@@ -23,6 +24,7 @@ __all__ = [
     "BillingSummary",
     "Collection",
     "Conversation",
+    "ConversationMessage",
     "Document",
     "DocumentList",
     "Index",
@@ -32,4 +34,4 @@ __all__ = [
     "UploadedDocument",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"

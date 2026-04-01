@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
+from .._scope import validate_scope
 from .._types import StreamEvent
 
 if TYPE_CHECKING:
@@ -56,8 +57,15 @@ class Responses:
         collection_id:
             Restrict to this collection.
         conversation_id:
-            Continue an existing conversation thread.
+            Continue an existing conversation thread. When set, the conversation's
+            persisted document scope is used and request-level scope selectors must
+            be omitted.
         """
+        normalized_document_ids = validate_scope(
+            document_ids=document_ids,
+            collection_id=collection_id,
+            conversation_id=conversation_id,
+        )
         body: Dict[str, Any] = {
             "message": message,
             "method": method,
@@ -66,8 +74,8 @@ class Responses:
         }
         if reasoning:
             body["reasoning"] = True
-        if document_ids is not None:
-            body["document_ids"] = document_ids
+        if normalized_document_ids is not None:
+            body["document_ids"] = normalized_document_ids
         if collection_id is not None:
             body["collection_id"] = collection_id
         if conversation_id is not None:
