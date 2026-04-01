@@ -35,6 +35,26 @@ class _Base:
 # ---------------------------------------------------------------------------
 # Documents
 # ---------------------------------------------------------------------------
+class DocumentIndex(_Base):
+    id: str
+    document_id: str
+    filename: Optional[str]
+    method: str
+    status: str
+    node_count: Optional[int]
+    chunk_count: Optional[int]
+    has_ast: bool
+    has_description: bool
+    processing_time_ms: Optional[int]
+    processing_ms: int
+    error_message: Optional[str]
+    created_at: str
+    updated_at: str
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        super().__init__(_coerce_index_payload(data))
+
+
 class Document(_Base):
     id: str
     filename: str
@@ -50,6 +70,11 @@ class Document(_Base):
     collection_id: Optional[str]
     upload_time: Optional[str]
     extraction_pages: Optional[List[Dict[str, Any]]]
+    indexes: Optional[List[DocumentIndex]]
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        super().__init__(data)
+        self.indexes = [DocumentIndex(_coerce_index_payload(item)) for item in data.get("indexes", [])]
 
 
 class UploadedDocument(_Base):
@@ -84,15 +109,29 @@ class DocumentList(_Base):
 # Indexes
 # ---------------------------------------------------------------------------
 class Index(_Base):
+    id: str
     document_id: str
-    filename: str
+    filename: Optional[str]
     method: str
     status: str
-    node_count: int
-    chunk_count: int
+    node_count: Optional[int]
+    chunk_count: Optional[int]
     has_ast: bool
     has_description: bool
+    processing_time_ms: Optional[int]
     processing_ms: int
+    error_message: Optional[str]
+    created_at: str
+    updated_at: str
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        super().__init__(_coerce_index_payload(data))
+
+
+def _coerce_index_payload(data: Dict[str, Any]) -> Dict[str, Any]:
+    payload = dict(data)
+    payload["processing_ms"] = payload.get("processing_ms") or payload.get("processing_time_ms") or 0
+    return payload
 
 
 # ---------------------------------------------------------------------------

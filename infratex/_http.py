@@ -58,7 +58,7 @@ class HTTPClient:
                 timeout=self.timeout_seconds,
                 headers={
                     "Authorization": "Bearer {}".format(api_key),
-                    "User-Agent": "infratex-python/0.4.0",
+                    "User-Agent": "infratex-python/0.5.0",
                 },
             )
 

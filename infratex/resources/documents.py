@@ -144,6 +144,7 @@ class Documents:
         document_id: str,
         *,
         method: str = "vector",
+        wait: bool = True,
     ) -> Index:
         """Create a search index for a document.
 
@@ -153,10 +154,57 @@ class Documents:
             The document to index.
         method:
             Indexing strategy: ``"vector"`` or ``"hybrid"``.
+        wait:
+            When ``True`` (default), poll until the index reaches ``indexed``.
         """
         resp = self._client.request(
             "POST",
             "/api/v1/documents/{}/indexes".format(document_id),
             json_body={"method": method},
         )
-        return Index(resp)
+        created = Index(resp)
+        if not wait:
+            return created
+        return self.get_index(document_id, method, wait=True)
+
+    def list_indexes(self, document_id: str) -> List[Index]:
+        """List index resources for a document."""
+        resp = self._client.request("GET", "/api/v1/documents/{}/indexes".format(document_id))
+        return [Index(index) for index in resp]
+
+    def get_index(
+        self,
+        document_id: str,
+        method: str,
+        *,
+        wait: bool = False,
+    ) -> Index:
+        """Retrieve a single index resource for a document."""
+        if not wait:
+            resp = self._client.request(
+                "GET",
+                "/api/v1/documents/{}/indexes/{}".format(document_id, method),
+            )
+            return Index(resp)
+        return self._wait_for_document_index(document_id, method)
+
+    def _wait_for_document_index(self, document_id: str, method: str) -> Index:
+        deadline = time.monotonic() + self._client.timeout_seconds
+
+        while True:
+            index = self.get_index(document_id, method, wait=False)
+            if index.status == "indexed":
+                return index
+            if index.status == "error":
+                raise InfratexError(
+                    index.error_message or "Indexing failed",
+                    status_code=409,
+                    code="index_failed",
+                )
+            if time.monotonic() >= deadline:
+                raise InfratexError(
+                    "Indexing timed out",
+                    status_code=504,
+                    code="index_timeout",
+                )
+            time.sleep(self._poll_interval_seconds)

@@ -9,6 +9,7 @@ from ._types import (
     Conversation,
     ConversationMessage,
     Document,
+    DocumentIndex,
     DocumentList,
     Index,
     SearchResponse,
@@ -26,6 +27,7 @@ __all__ = [
     "Conversation",
     "ConversationMessage",
     "Document",
+    "DocumentIndex",
     "DocumentList",
     "Index",
     "SearchResponse",
@@ -34,4 +36,4 @@ __all__ = [
     "UploadedDocument",
 ]
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"

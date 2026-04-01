@@ -20,10 +20,16 @@ doc = client.documents.upload("report.pdf")
 print(doc.id, doc.status, doc.page_count)
 
 # Index for search
+# The SDK waits for the queued index by default.
 index = client.documents.index(doc.id, method="vector")
 
 # Search
-results = client.searches.create(query="revenue growth", document_ids=[doc.id])
+# Searches and responses require a ready index that matches the selected method.
+results = client.searches.create(
+    query="revenue growth",
+    method="vector",
+    document_ids=[doc.id],
+)
 for r in results:
     print(r.score, r.content[:100])
 
@@ -76,7 +82,13 @@ md = client.documents.markdown("doc-id")
 client.documents.delete("doc-id")
 
 # Index
+# By default this waits until the queued method-specific index reaches "indexed".
 index = client.documents.index("doc-id", method="hybrid")
+
+# Queue-first behavior if you want to manage polling yourself
+queued = client.documents.index("doc-id", method="hybrid", wait=False)
+indexes = client.documents.list_indexes("doc-id")
+index = client.documents.get_index("doc-id", "hybrid", wait=True)
 ```
 
 ### Searches
@@ -125,6 +137,8 @@ for event in client.responses.create(
     if event.type == "text":
         print(event.content, end="")
 ```
+
+`documents.index(...)` mirrors `documents.upload(...)`: the raw HTTP API is async-first, but the SDK keeps the default single-call workflow and only exposes manual polling when you ask for it.
 
 ### Collections
 
