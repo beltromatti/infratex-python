@@ -66,6 +66,10 @@ client = Infratex()
 doc = client.documents.upload("report.pdf")
 doc = client.documents.upload("report.pdf", method="standard", collection_id="col-id")
 
+# Queue-first upload if you want to manage the parse lifecycle yourself
+queued = client.documents.upload("report.pdf", wait=False)
+doc = client.documents.get(queued.id, wait=True)
+
 # List
 docs = client.documents.list(limit=50, offset=0, collection_id="col-id")
 print(docs.total)
@@ -138,7 +142,7 @@ for event in client.responses.create(
         print(event.content, end="")
 ```
 
-`documents.index(...)` mirrors `documents.upload(...)`: the raw HTTP API is async-first, but the SDK keeps the default single-call workflow and only exposes manual polling when you ask for it.
+`documents.upload(...)` and `documents.index(...)` now follow the same contract: both wait by default, both support `wait=False` for queue-first control, and both expose a corresponding getter with `wait=True` when you want to resume later.
 
 ### Collections
 

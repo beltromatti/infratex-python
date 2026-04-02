@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, overload
 
 from .._http import InfratexError
 from .._types import DocumentList, Document, Index, UploadedDocument
@@ -21,6 +21,7 @@ class Documents:
     def __init__(self, client: HTTPClient) -> None:
         self._client = client
 
+    @overload
     def upload(
         self,
         file_path: str,
@@ -28,7 +29,29 @@ class Documents:
         method: Optional[str] = None,
         pipeline: Optional[str] = None,
         collection_id: Optional[str] = None,
-    ) -> UploadedDocument:
+        wait: Literal[True] = True,
+    ) -> UploadedDocument: ...
+
+    @overload
+    def upload(
+        self,
+        file_path: str,
+        *,
+        method: Optional[str] = None,
+        pipeline: Optional[str] = None,
+        collection_id: Optional[str] = None,
+        wait: Literal[False],
+    ) -> Document: ...
+
+    def upload(
+        self,
+        file_path: str,
+        *,
+        method: Optional[str] = None,
+        pipeline: Optional[str] = None,
+        collection_id: Optional[str] = None,
+        wait: bool = True,
+    ) -> Union[Document, UploadedDocument]:
         """Upload and parse a PDF document.
 
         Parameters
@@ -41,6 +64,10 @@ class Documents:
             Optional sub-pipeline (``"traditional"``, ``"math"``).
         collection_id:
             Optional collection to assign the document to.
+        wait:
+            When ``True`` (default), poll until parsing is complete and return
+            the final markdown-bearing document payload. When ``False``,
+            return the queued document resource immediately.
         """
         filename = os.path.basename(file_path)
         with open(file_path, "rb") as f:
@@ -60,7 +87,9 @@ class Documents:
                 files=files,
             )
         created = Document(resp)
-        return self._wait_for_uploaded_document(created.id)
+        if not wait:
+            return created
+        return self.get(created.id, wait=True)
 
     def list(
         self,
@@ -92,8 +121,16 @@ class Documents:
         resp = self._client.request("GET", "/api/v1/documents", params=params)
         return DocumentList(resp)
 
-    def get(self, document_id: str) -> Document:
+    @overload
+    def get(self, document_id: str, *, wait: Literal[False] = False) -> Document: ...
+
+    @overload
+    def get(self, document_id: str, *, wait: Literal[True]) -> UploadedDocument: ...
+
+    def get(self, document_id: str, *, wait: bool = False) -> Union[Document, UploadedDocument]:
         """Retrieve a single document by ID."""
+        if wait:
+            return self._wait_for_uploaded_document(document_id)
         resp = self._client.request("GET", "/api/v1/documents/{}".format(document_id))
         return Document(resp)
 
@@ -105,7 +142,7 @@ class Documents:
         deadline = time.monotonic() + self._client.timeout_seconds
 
         while True:
-            document = self.get(document_id)
+            document = self.get(document_id, wait=False)
             if document.status in {"done", "parsed", "indexed"}:
                 return UploadedDocument(
                     {
