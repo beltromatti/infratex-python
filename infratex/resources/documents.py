@@ -12,6 +12,8 @@ from .._types import DocumentList, Document, Index, UploadedDocument
 if TYPE_CHECKING:
     from .._http import HTTPClient
 
+ParseMethod = Literal["legacy", "experimental", "standard", "max", "cost-efficient"]
+
 
 class Documents:
     """Interact with the ``/api/v1/documents`` endpoints."""
@@ -26,7 +28,7 @@ class Documents:
         self,
         file_path: str,
         *,
-        method: Optional[str] = None,
+        method: Optional[ParseMethod] = None,
         pipeline: Optional[str] = None,
         collection_id: Optional[str] = None,
         wait: Literal[True] = True,
@@ -37,7 +39,7 @@ class Documents:
         self,
         file_path: str,
         *,
-        method: Optional[str] = None,
+        method: Optional[ParseMethod] = None,
         pipeline: Optional[str] = None,
         collection_id: Optional[str] = None,
         wait: Literal[False],
@@ -47,7 +49,7 @@ class Documents:
         self,
         file_path: str,
         *,
-        method: Optional[str] = None,
+        method: Optional[ParseMethod] = None,
         pipeline: Optional[str] = None,
         collection_id: Optional[str] = None,
         wait: bool = True,
@@ -59,7 +61,7 @@ class Documents:
         file_path:
             Local path to the PDF file.
         method:
-            Parsing method (``"standard"``, ``"cost-efficient"``, ``"experimental"``).
+            Parsing method (``"standard"``, ``"max"``, ``"cost-efficient"``, ``"experimental"``, ``"legacy"``).
         pipeline:
             Optional sub-pipeline (``"traditional"``, ``"math"``).
         collection_id:

@@ -65,6 +65,7 @@ client = Infratex()
 # now creates the document first and polls until parsing is complete.
 doc = client.documents.upload("report.pdf")
 doc = client.documents.upload("report.pdf", method="standard", collection_id="col-id")
+doc = client.documents.upload("deck.pdf", method="max")
 
 # Queue-first upload if you want to manage the parse lifecycle yourself
 queued = client.documents.upload("report.pdf", wait=False)
@@ -143,6 +144,8 @@ for event in client.responses.create(
 ```
 
 `documents.upload(...)` and `documents.index(...)` now follow the same contract: both wait by default, both support `wait=False` for queue-first control, and both expose a corresponding getter with `wait=True` when you want to resume later.
+
+Use `method="max"` when you want the Gemini parser to preserve the same extracted text while also appending concise `[visual-note: ...]` lines for meaningful charts, figures, screenshots, and photos.
 
 ### Collections
 
