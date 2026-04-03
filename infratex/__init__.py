@@ -2,6 +2,7 @@
 
 from ._client import Infratex
 from ._http import InfratexError
+from ._version import __version__
 from ._types import (
     Account,
     BillingSummary,
@@ -35,5 +36,3 @@ __all__ = [
     "StreamEvent",
     "UploadedDocument",
 ]
-
-__version__ = "0.7.0"

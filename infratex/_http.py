@@ -7,6 +7,8 @@ from typing import Any, Dict, Iterator, Optional
 
 import httpx
 
+from ._version import __version__
+
 __all__ = ["HTTPClient", "InfratexError"]
 
 _DEFAULT_BASE_URL = "https://api.infratex.io"
@@ -58,7 +60,7 @@ class HTTPClient:
                 timeout=self.timeout_seconds,
                 headers={
                     "Authorization": "Bearer {}".format(api_key),
-                    "User-Agent": "infratex-python/0.6.0",
+                    "User-Agent": f"infratex-python/{__version__}",
                 },
             )
 
