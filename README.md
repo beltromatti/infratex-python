@@ -1,6 +1,6 @@
 # Infratex Python SDK
 
-Official Python client for the [Infratex](https://infratex.io) document intelligence API. Parse PDFs, build search indexes, and generate AI-powered answers grounded in your documents.
+Official Python client for the [Infratex](https://infratex.io) document intelligence API. Parse PDFs or ordered image batches, build search indexes, and generate AI-powered answers grounded in your documents.
 
 ## Installation
 
@@ -18,6 +18,10 @@ client = Infratex(api_key="infratex_sk_...")
 # Upload and parse a PDF
 doc = client.documents.upload("report.pdf")
 print(doc.id, doc.status, doc.page_count)
+
+# Upload an ordered image batch as document pages
+deck = client.documents.upload_images(["page-1.png", "page-2.png"], method="max")
+print(deck.id, deck.status, deck.page_count)
 
 # Index for search
 # The SDK waits for the queued index by default.
@@ -67,9 +71,17 @@ doc = client.documents.upload("report.pdf")
 doc = client.documents.upload("report.pdf", method="standard", collection_id="col-id")
 doc = client.documents.upload("deck.pdf", method="max")
 
+# Upload ordered images instead of a PDF
+images = client.documents.upload_images(["page-1.png", "page-2.png"])
+images = client.documents.upload_images(["page-1.png", "page-2.png"], method="max", collection_id="col-id")
+
 # Queue-first upload if you want to manage the parse lifecycle yourself
 queued = client.documents.upload("report.pdf", wait=False)
 doc = client.documents.get(queued.id, wait=True)
+
+# Queue-first image upload follows the same pattern
+queued_images = client.documents.upload_images(["page-1.png", "page-2.png"], wait=False)
+images = client.documents.get(queued_images.id, wait=True)
 
 # List
 docs = client.documents.list(limit=50, offset=0, collection_id="col-id")
@@ -143,9 +155,9 @@ for event in client.responses.create(
         print(event.content, end="")
 ```
 
-`documents.upload(...)` and `documents.index(...)` now follow the same contract: both wait by default, both support `wait=False` for queue-first control, and both expose a corresponding getter with `wait=True` when you want to resume later.
+`documents.upload(...)`, `documents.upload_images(...)`, and `documents.index(...)` now follow the same contract: they wait by default, support queue-first control with `wait=False`, and expose a corresponding getter with `wait=True` when you want to resume later.
 
-Use `method="max"` when you want the Gemini parser to preserve the same extracted text while also appending concise `[visual-note: ...]` lines for meaningful charts, figures, screenshots, and photos.
+Use `method="max"` when you want the Gemini parser to preserve the same extracted text while also appending brief `[visual-note: ...]` lines for meaningful charts, figures, screenshots, and photos.
 
 ### Collections
 

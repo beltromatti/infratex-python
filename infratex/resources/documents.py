@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, overload
 
 from .._http import InfratexError
 from .._types import DocumentList, Document, Index, UploadedDocument
@@ -88,6 +88,86 @@ class Documents:
                 data=data,
                 files=files,
             )
+        created = Document(resp)
+        if not wait:
+            return created
+        return self.get(created.id, wait=True)
+
+    @overload
+    def upload_images(
+        self,
+        file_paths: Sequence[str],
+        *,
+        method: Literal["standard", "max"] | None = None,
+        collection_id: Optional[str] = None,
+        wait: Literal[True] = True,
+    ) -> UploadedDocument: ...
+
+    @overload
+    def upload_images(
+        self,
+        file_paths: Sequence[str],
+        *,
+        method: Literal["standard", "max"] | None = None,
+        collection_id: Optional[str] = None,
+        wait: Literal[False],
+    ) -> Document: ...
+
+    def upload_images(
+        self,
+        file_paths: Sequence[str],
+        *,
+        method: Literal["standard", "max"] | None = None,
+        collection_id: Optional[str] = None,
+        wait: bool = True,
+    ) -> Union[Document, UploadedDocument]:
+        """Upload and parse an ordered batch of page images.
+
+        Parameters
+        ----------
+        file_paths:
+            Ordered local paths to PNG, JPEG, or WebP image files.
+        method:
+            Parsing method. Image uploads support only ``"standard"`` and ``"max"``.
+        collection_id:
+            Optional collection to assign the document to.
+        wait:
+            When ``True`` (default), poll until parsing is complete and return
+            the final markdown-bearing document payload. When ``False``,
+            return the queued document resource immediately.
+        """
+        paths = list(file_paths)
+        if not paths:
+            raise ValueError("file_paths must contain at least one image path")
+
+        resolved_method = method or "standard"
+        if resolved_method not in {"standard", "max"}:
+            raise ValueError("image uploads support only 'standard' and 'max'")
+
+        data: Dict[str, Any] = {"method": resolved_method}
+        if collection_id is not None:
+            data["collection_id"] = collection_id
+
+        files: List[tuple[str, tuple[str, Any, str]]] = []
+        handles = []
+        try:
+            for file_path in paths:
+                filename = os.path.basename(file_path)
+                handle = open(file_path, "rb")
+                handles.append(handle)
+                mime_type = _guess_image_mime_type(filename)
+                files.append(("files", (filename, handle, mime_type)))
+
+            resp = self._client.request(
+                "POST",
+                "/api/v1/documents/images",
+                data=data,
+                files=files,
+            )
+        finally:
+            for handle in handles:
+                handle.close()
+
         created = Document(resp)
         if not wait:
             return created
@@ -247,3 +327,14 @@ class Documents:
                     code="index_timeout",
                 )
             time.sleep(self._poll_interval_seconds)
+
+
+def _guess_image_mime_type(file_path: str) -> str:
+    lower = file_path.lower()
+    if lower.endswith(".png"):
+        return "image/png"
+    if lower.endswith(".jpg") or lower.endswith(".jpeg"):
+        return "image/jpeg"
+    if lower.endswith(".webp"):
+        return "image/webp"
+    return "application/octet-stream"
